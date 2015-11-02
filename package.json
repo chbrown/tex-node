@@ -1,0 +1,35 @@
+{
+  "name": "tex-node",
+  "version": "0.3.3",
+  "description": "Parsers for TeX and BibTeX",
+  "keywords": [
+    "tex",
+    "latex",
+    "bibtex",
+    "parser",
+    "lexer"
+  ],
+  "homepage": "https://github.com/chbrown/tex-node",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chbrown/tex-node.git"
+  },
+  "bugs": {
+    "email": "Christopher Brown <io@henrian.com>",
+    "url": "https://github.com/chbrown/tex-node/issues"
+  },
+  "license": "MIT",
+  "author": "Christopher Brown <io@henrian.com> (http://henrian.com)",
+  "dependencies": {
+    "loge": "*",
+    "tex": "*",
+    "yargs": "*"
+  },
+  "devDependencies": {
+    "declarations": "*",
+    "typescript": "next"
+  },
+  "bin": {
+    "tex-node": "bin/tex-node"
+  }
+}
