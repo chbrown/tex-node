@@ -14,10 +14,7 @@
     "type": "git",
     "url": "https://github.com/chbrown/tex-node.git"
   },
-  "bugs": {
-    "email": "Christopher Brown <io@henrian.com>",
-    "url": "https://github.com/chbrown/tex-node/issues"
-  },
+  "bugs": "https://github.com/chbrown/tex-node/issues",
   "license": "MIT",
   "author": "Christopher Brown <io@henrian.com> (http://henrian.com)",
   "dependencies": {
@@ -27,7 +24,7 @@
   },
   "devDependencies": {
     "declarations": "*",
-    "typescript": "next"
+    "typescript": "*"
   },
   "bin": {
     "tex-node": "bin/tex-node"
