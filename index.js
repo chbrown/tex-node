@@ -3,65 +3,76 @@ var loge_1 = require('loge');
 var yargs = require('yargs');
 var tex_1 = require('tex');
 var models_1 = require('tex/models');
-var cliCommands = {
-    'bib-format': function (filename) {
-        loge_1.logger.debug('bib-format "%s"', filename);
-        var data = fs_1.readFileSync(filename, 'utf8');
-        tex_1.parseBibTeXEntries(data).forEach(function (reference) {
-            console.log(reference.toBibTeX());
-        });
-    },
-    'bib-json': function (filename) {
-        loge_1.logger.debug('bib-json "%s"', filename);
-        var data = fs_1.readFileSync(filename, 'utf8');
-        tex_1.parseBibTeXEntries(data).forEach(function (reference) {
-            console.log(JSON.stringify(reference));
-        });
-    },
-    'json-bib': function (filename) {
-        loge_1.logger.debug('json-bib "%s"', filename);
-        var data = fs_1.readFileSync(filename, 'utf8');
-        data.trim().split(/\r\n|\r|\n/g).map(function (line) {
-            var reference = JSON.parse(line);
-            var entry = models_1.BibTeXEntry.fromJSON(reference);
-            console.log(entry.toBibTeX());
-        });
-    },
-    'bib-test': function (filename) {
-        loge_1.logger.debug('bib-test "%s"', filename);
-        var data = fs_1.readFileSync(filename, 'utf8');
-        try {
-            tex_1.parseBibTeXEntries(data);
-        }
-        catch (exc) {
-            console.error(filename);
+var commands = [
+    {
+        id: 'bib-format',
+        description: 'Parse bib files and format as standard BibTeX',
+        run: function (filename) {
+            var data = fs_1.readFileSync(filename, 'utf8');
+            tex_1.parseBibTeXEntries(data).forEach(function (reference) {
+                console.log(reference.toBibTeX());
+            });
         }
     },
-    'tex-flatten': function (filename) {
-        loge_1.logger.debug('tex-flatten "%s"', filename);
-        var data = fs_1.readFileSync(filename, 'utf8');
-        var node = tex_1.parseNode(data);
-        console.log(node.toString());
+    {
+        id: 'bib-json',
+        description: 'Parse bib files and format as JSON',
+        run: function (filename) {
+            var data = fs_1.readFileSync(filename, 'utf8');
+            tex_1.parseBibTeXEntries(data).forEach(function (reference) {
+                console.log(JSON.stringify(reference));
+            });
+        },
     },
-    'tex-citekeys': function (filename) {
-        loge_1.logger.debug('tex-citekeys "%s"', filename);
-        var data = fs_1.readFileSync(filename, 'utf8');
-        var citekeys = tex_1.extractCitekeys(data);
-        console.log(citekeys.join('\n'));
+    {
+        id: 'json-bib',
+        description: 'Parse JSON and format as standard BibTeX',
+        run: function (filename) {
+            var data = fs_1.readFileSync(filename, 'utf8');
+            data.trim().split(/\r\n|\r|\n/g).map(function (line) {
+                var reference = JSON.parse(line);
+                var entry = models_1.BibTeXEntry.fromJSON(reference);
+                console.log(entry.toBibTeX());
+            });
+        },
     },
-};
+    {
+        id: 'bib-test',
+        description: 'Test that the given files can be parsed as BibTeX entries, printing the filename of unparseable files to STDERR',
+        run: function (filename) {
+            var data = fs_1.readFileSync(filename, 'utf8');
+            try {
+                tex_1.parseBibTeXEntries(data);
+            }
+            catch (exc) {
+                console.error(filename);
+            }
+        },
+    },
+    {
+        id: 'tex-flatten',
+        description: 'Extract the text part from a string of TeX',
+        run: function (filename) {
+            var data = fs_1.readFileSync(filename, 'utf8');
+            var node = tex_1.parseNode(data);
+            console.log(node.toString());
+        },
+    },
+    {
+        id: 'tex-citekeys',
+        description: 'Extract the citekeys references in a TeX document (using RegExp)',
+        run: function (filename) {
+            var data = fs_1.readFileSync(filename, 'utf8');
+            var citekeys = tex_1.extractCitekeys(data);
+            console.log(citekeys.join('\n'));
+        },
+    },
+];
 function main() {
-    var yargs_parser = yargs
+    var argvparser = yargs
         .usage('Usage: tex-node <command> [<arg1> [<arg2> ...]]')
-        .command('bib-test', 'Test that the given files can be parsed as BibTeX entries, printing the filename of unparseable files to STDERR')
-        .command('bib-json', 'Parse bib files and format as JSON')
-        .command('bib-format', 'Parse bib files and format as standard BibTeX')
-        .command('json-bib', 'Parse JSON and format as standard BibTeX')
-        .command('tex-flatten', 'Extract the text part from a string of TeX')
-        .command('tex-citekeys', 'Extract the citekeys references in a TeX document (using RegExp)')
         .describe({
         help: 'print this help message',
-        json: 'print JSON output',
         verbose: 'print debug messages',
         version: 'print version',
     })
@@ -73,19 +84,22 @@ function main() {
         'help',
         'verbose',
     ]);
-    var argv = yargs_parser.argv;
+    commands.forEach(function (command) {
+        argvparser = argvparser.command(command.id, command.description);
+    });
+    var argv = argvparser.argv;
     loge_1.logger.level = argv.verbose ? loge_1.Level.debug : loge_1.Level.info;
     if (argv.help) {
-        yargs_parser.showHelp();
+        argvparser.showHelp();
     }
     else if (argv.version) {
         console.log(require('./package.json').version);
     }
     else {
-        var _a = yargs_parser.demand(1).argv._, command = _a[0], filenames = _a.slice(1);
-        var cliCommand = cliCommands[command];
-        if (cliCommand === undefined) {
-            console.error('Unrecognized command: "%s"', command);
+        var _a = argvparser.demand(1).argv._, command_id = _a[0], filenames = _a.slice(1);
+        var command = commands.filter(function (command) { return command.id === command_id; })[0];
+        if (command === undefined) {
+            console.error("Unrecognized command: \"" + command_id + "\"");
             process.exit(1);
         }
         process.on('SIGINT', function () {
@@ -97,7 +111,10 @@ function main() {
                 process.exit(0);
             }
         });
-        filenames.forEach(cliCommand);
+        filenames.forEach(function (filename) {
+            loge_1.logger.debug(command.id + " \"" + filename + "\"");
+            command.run(filename);
+        });
     }
 }
 exports.main = main;

@@ -5,94 +5,113 @@ import * as yargs from 'yargs';
 import {parseBibTeXEntries, extractCitekeys, parseNode} from 'tex';
 import {BibTeXEntry} from 'tex/models';
 
-type CLICommand = (filename: string) => void;
+interface Command {
+  id: string;
+  description: string;
+  run: (filename: string) => void;
+}
 
-const cliCommands: {[index: string]: CLICommand} = {
-  'bib-format': (filename: string) => {
-    logger.debug('bib-format "%s"', filename);
-    var data = readFileSync(filename, 'utf8');
-    parseBibTeXEntries(data).forEach(reference => {
-      console.log(reference.toBibTeX());
-    });
-  },
-  'bib-json': (filename: string) => {
-    logger.debug('bib-json "%s"', filename);
-    var data = readFileSync(filename, 'utf8');
-    parseBibTeXEntries(data).forEach(reference => {
-      console.log(JSON.stringify(reference));
-    });
-  },
-  'json-bib': (filename: string) => {
-    logger.debug('json-bib "%s"', filename);
-    var data = readFileSync(filename, 'utf8');
-    data.trim().split(/\r\n|\r|\n/g).map(line => {
-      var reference = JSON.parse(line);
-      var entry = BibTeXEntry.fromJSON(reference);
-      console.log(entry.toBibTeX());
-    });
-  },
-  'bib-test': (filename: string) => {
-    logger.debug('bib-test "%s"', filename);
-    var data = readFileSync(filename, 'utf8');
-    try {
-      parseBibTeXEntries(data);
-    }
-    catch (exc) {
-      console.error(filename);
+const commands: Command[] = [
+  {
+    id: 'bib-format',
+    description: 'Parse bib files and format as standard BibTeX',
+    run(filename: string) {
+      var data = readFileSync(filename, 'utf8');
+      parseBibTeXEntries(data).forEach(reference => {
+        console.log(reference.toBibTeX());
+      });
     }
   },
-  'tex-flatten': (filename: string) => {
-    logger.debug('tex-flatten "%s"', filename);
-    var data = readFileSync(filename, 'utf8');
-    var node = parseNode(data);
-    console.log(node.toString());
+  {
+    id: 'bib-json',
+    description: 'Parse bib files and format as JSON',
+    run(filename: string) {
+      var data = readFileSync(filename, 'utf8');
+      parseBibTeXEntries(data).forEach(reference => {
+        console.log(JSON.stringify(reference));
+      });
+    },
   },
-  'tex-citekeys': (filename: string) => {
-    logger.debug('tex-citekeys "%s"', filename);
-    var data = readFileSync(filename, 'utf8');
-    var citekeys: string[] = extractCitekeys(data);
-    console.log(citekeys.join('\n'));
+  {
+    id: 'json-bib',
+    description: 'Parse JSON and format as standard BibTeX',
+    run(filename: string) {
+      var data = readFileSync(filename, 'utf8');
+      data.trim().split(/\r\n|\r|\n/g).map(line => {
+        var reference = JSON.parse(line);
+        var entry = BibTeXEntry.fromJSON(reference);
+        console.log(entry.toBibTeX());
+      });
+    },
   },
-};
+  {
+    id: 'bib-test',
+    description: 'Test that the given files can be parsed as BibTeX entries, printing the filename of unparseable files to STDERR',
+    run(filename: string) {
+      var data = readFileSync(filename, 'utf8');
+      try {
+        parseBibTeXEntries(data);
+      }
+      catch (exc) {
+        console.error(filename);
+      }
+    },
+  },
+  {
+    id: 'tex-flatten',
+    description: 'Extract the text part from a string of TeX',
+    run(filename: string) {
+      var data = readFileSync(filename, 'utf8');
+      var node = parseNode(data);
+      console.log(node.toString());
+    },
+  },
+  {
+    id: 'tex-citekeys',
+    description: 'Extract the citekeys references in a TeX document (using RegExp)',
+    run(filename: string) {
+      var data = readFileSync(filename, 'utf8');
+      var citekeys = extractCitekeys(data);
+      console.log(citekeys.join('\n'));
+    },
+  },
+];
 
 export function main() {
-  var yargs_parser = yargs
-    .usage('Usage: tex-node <command> [<arg1> [<arg2> ...]]')
-    .command('bib-test', 'Test that the given files can be parsed as BibTeX entries, printing the filename of unparseable files to STDERR')
-    .command('bib-json', 'Parse bib files and format as JSON')
-    .command('bib-format', 'Parse bib files and format as standard BibTeX')
-    .command('json-bib', 'Parse JSON and format as standard BibTeX')
-    .command('tex-flatten', 'Extract the text part from a string of TeX')
-    .command('tex-citekeys', 'Extract the citekeys references in a TeX document (using RegExp)')
-    .describe({
-      help: 'print this help message',
-      json: 'print JSON output',
-      verbose: 'print debug messages',
-      version: 'print version',
-    })
-    .alias({
-      help: 'h',
-      verbose: 'v',
-    })
-    .boolean([
-      'help',
-      'verbose',
-    ]);
+  var argvparser = yargs
+  .usage('Usage: tex-node <command> [<arg1> [<arg2> ...]]')
+  .describe({
+    help: 'print this help message',
+    verbose: 'print debug messages',
+    version: 'print version',
+  })
+  .alias({
+    help: 'h',
+    verbose: 'v',
+  })
+  .boolean([
+    'help',
+    'verbose',
+  ]);
 
-  var argv = yargs_parser.argv;
+  commands.forEach(command => {
+    argvparser = argvparser.command(command.id, command.description);
+  });
+
+  var argv = argvparser.argv;
   logger.level = argv.verbose ? Level.debug : Level.info;
 
   if (argv.help) {
-    yargs_parser.showHelp();
+    argvparser.showHelp();
   }
   else if (argv.version) {
     console.log(require('./package.json').version);
   }
   else {
-    var [command, ...filenames] = yargs_parser.demand(1).argv._;
-    var cliCommand = cliCommands[command];
-    if (cliCommand === undefined) {
-      console.error('Unrecognized command: "%s"', command);
+    var [command_id, ...filenames] = argvparser.demand(1).argv._;
+    var command = commands.filter(command => command.id === command_id)[0];
+    if (command === undefined) {
+      console.error(`Unrecognized command: "${command_id}"`);
       process.exit(1);
     }
     process.on('SIGINT', () => {
@@ -104,6 +123,9 @@ export function main() {
         process.exit(0);
       }
     });
-    filenames.forEach(cliCommand);
+    filenames.forEach(filename => {
+      logger.debug(`${command.id} "${filename}"`);
+      command.run(filename);
+    });
   }
 }
