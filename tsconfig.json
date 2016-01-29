@@ -6,6 +6,6 @@
   "files": [
     "node_modules/declarations/node/node.d.ts",
     "node_modules/declarations/yargs/yargs.d.ts",
-    "index.ts"
+    "bin/tex-node.ts"
   ]
 }

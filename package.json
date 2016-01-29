@@ -26,7 +26,8 @@
     "declarations": "*",
     "typescript": "*"
   },
+  "main": "bin/tex-node.js",
   "bin": {
-    "tex-node": "bin/tex-node"
+    "tex-node": "bin/tex-node.js"
   }
 }
