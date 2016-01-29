@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 var fs_1 = require('fs');
 var loge_1 = require('loge');
 var yargs = require('yargs');

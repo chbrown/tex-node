@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import {readFileSync} from 'fs';
 import {logger, Level} from 'loge';
 import * as yargs from 'yargs';
