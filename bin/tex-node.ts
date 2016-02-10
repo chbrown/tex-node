@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import {readFileSync} from 'fs';
-import {logger, Level} from 'loge';
 import * as yargs from 'yargs';
 
 import {parseBibTeXEntries, extractCitekeys, parseNode} from 'tex';
@@ -100,7 +99,6 @@ export function main() {
   });
 
   var argv = argvparser.argv;
-  logger.level = argv.verbose ? Level.debug : Level.info;
 
   if (argv.help) {
     argvparser.showHelp();
@@ -125,7 +123,9 @@ export function main() {
       }
     });
     filenames.forEach(filename => {
-      logger.debug(`${command.id} "${filename}"`);
+      if (argv.verbose) {
+        console.error(`${command.id} "${filename}"`);
+      }
       command.run(filename);
     });
   }
