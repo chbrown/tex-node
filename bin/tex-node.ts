@@ -2,7 +2,9 @@
 import {readFileSync} from 'fs';
 import * as yargs from 'yargs';
 
-import {parseBibTeXEntries, extractCitekeys, parseNode} from 'tex';
+import {parseNode, parseBibTeXEntries, extractCitekeys,
+  stringifyBibTeXEntry,
+  flattenBibTeXEntry, unflattenBibTeXEntry} from 'tex';
 import {BibTeXEntry} from 'tex/models';
 
 interface Command {
@@ -16,9 +18,9 @@ const commands: Command[] = [
     id: 'bib-format',
     description: 'Parse bib files and format as standard BibTeX',
     run(filename: string) {
-      var data = readFileSync(filename, 'utf8');
-      parseBibTeXEntries(data).forEach(reference => {
-        console.log(reference.toBibTeX());
+      const data = readFileSync(filename, 'utf8');
+      parseBibTeXEntries(data).forEach(bibTeXEntry => {
+        console.log(stringifyBibTeXEntry(bibTeXEntry));
       });
     }
   },
@@ -26,9 +28,9 @@ const commands: Command[] = [
     id: 'bib-json',
     description: 'Parse bib files and format as JSON',
     run(filename: string) {
-      var data = readFileSync(filename, 'utf8');
-      parseBibTeXEntries(data).forEach(reference => {
-        console.log(JSON.stringify(reference));
+      const data = readFileSync(filename, 'utf8');
+      parseBibTeXEntries(data).forEach(bibTeXEntry => {
+        console.log(JSON.stringify(flattenBibTeXEntry(bibTeXEntry)));
       });
     },
   },
@@ -36,11 +38,11 @@ const commands: Command[] = [
     id: 'json-bib',
     description: 'Parse JSON and format as standard BibTeX',
     run(filename: string) {
-      var data = readFileSync(filename, 'utf8');
+      const data = readFileSync(filename, 'utf8');
       data.trim().split(/\r\n|\r|\n/g).map(line => {
-        var reference = JSON.parse(line);
-        var entry = BibTeXEntry.fromJSON(reference);
-        console.log(entry.toBibTeX());
+        const object = JSON.parse(line);
+        const bibTeXEntry = unflattenBibTeXEntry(object);
+        console.log(stringifyBibTeXEntry(bibTeXEntry));
       });
     },
   },
@@ -48,7 +50,7 @@ const commands: Command[] = [
     id: 'bib-test',
     description: 'Test that the given files can be parsed as BibTeX entries, printing the filename of unparseable files to STDERR',
     run(filename: string) {
-      var data = readFileSync(filename, 'utf8');
+      const data = readFileSync(filename, 'utf8');
       try {
         parseBibTeXEntries(data);
       }
@@ -61,8 +63,8 @@ const commands: Command[] = [
     id: 'tex-flatten',
     description: 'Extract the text part from a string of TeX',
     run(filename: string) {
-      var data = readFileSync(filename, 'utf8');
-      var node = parseNode(data);
+      const data = readFileSync(filename, 'utf8');
+      const node = parseNode(data);
       console.log(node.toString());
     },
   },
@@ -70,8 +72,8 @@ const commands: Command[] = [
     id: 'tex-citekeys',
     description: 'Extract the citekeys references in a TeX document (using RegExp)',
     run(filename: string) {
-      var data = readFileSync(filename, 'utf8');
-      var citekeys = extractCitekeys(data);
+      const data = readFileSync(filename, 'utf8');
+      const citekeys = extractCitekeys(data);
       console.log(citekeys.join('\n'));
     },
   },
@@ -107,8 +109,8 @@ export function main() {
     console.log(require('./package.json').version);
   }
   else {
-    var [command_id, ...filenames] = argvparser.demand(1).argv._;
-    var command = commands.filter(command => command.id === command_id)[0];
+    const [command_id, ...filenames] = argvparser.demand(1).argv._;
+    const command = commands.filter(command => command.id === command_id)[0];
     if (command === undefined) {
       console.error(`Unrecognized command: "${command_id}"`);
       process.exit(1);
