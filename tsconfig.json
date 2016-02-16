@@ -5,7 +5,7 @@
   },
   "files": [
     "node_modules/declarations/node/node.d.ts",
-    "node_modules/declarations/yargs/yargs.d.ts",
+    "node_modules/declarations/optimist/optimist.d.ts",
     "bin/tex-node.ts"
   ]
 }

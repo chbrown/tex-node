@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import {readFileSync} from 'fs';
-import * as yargs from 'yargs';
+import * as optimist from 'optimist';
 
 import {parseNode, parseBibTeXEntries, extractCitekeys,
   stringifyBibTeXEntry,
@@ -80,8 +80,7 @@ const commands: Command[] = [
 ];
 
 export function main() {
-  var argvparser = yargs
-  .usage('Usage: tex-node <command> [<arg1> [<arg2> ...]]')
+  let argvparser = optimist
   .describe({
     help: 'print this help message',
     verbose: 'print debug messages',
@@ -96,11 +95,12 @@ export function main() {
     'verbose',
   ]);
 
-  commands.forEach(command => {
-    argvparser = argvparser.command(command.id, command.description);
-  });
+  const overallUsage = 'Usage: tex-node <command> [<arg1> [<arg2> ...]]';
+  const commandsLines = commands.map(command => `  ${command.id}: ${command.description}`);
+  const usage = [overallUsage, ...commandsLines].join('\n');
+  argvparser = argvparser.usage(usage);
 
-  var argv = argvparser.argv;
+  let argv = argvparser.argv;
 
   if (argv.help) {
     argvparser.showHelp();
